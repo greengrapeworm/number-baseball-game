@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>숫자 야구 게임</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1e3c72, #2a5298);
+
+      background-size: cover;
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .container {
+      background: rgba(0, 0, 0, 0.7);
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 0 20px rgba(0, 0, 0, 0.6);
+      text-align: center;
+      width: 90%;
+      max-width: 600px;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    input {
+      padding: 10px;
+      font-size: 1rem;
+      border-radius: 10px;
+      border: none;
+      margin: 10px;
+      width: 200px;
+      text-align: center;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 10px;
+      background: #005bac;
+      color: #fff;
+      cursor: pointer;
+      margin: 10px;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #003f87;
+    }
+
+    #log {
+      margin-top: 20px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 10px;
+      padding: 15px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 0.9rem;
+      text-align: left;
+    }
+
+    #utils {
+      margin-top: 20px;
+    }
+
+    .util-button {
+      font-size: 0.9rem;
+      background: #005bac;
+      margin: 5px;
+    }
+
+    .util-button:hover {
+      background: #003f87;
+    }
+
+    #popup {
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #333;
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+  <audio id="bgm" autoplay loop>
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/15/audio_7bf4c9f13a.mp3?filename=motivational-rock-11459.mp3" type="audio/mpeg">
+    브라우저가 오디오 태그를 지원하지 않습니다.
+  </audio>
+
+  <div id="popup">로그가 지워졌습니다.</div>
+
+  <div class="container">
+    <h1>⚾ 숫자 야구 게임</h1>
+    <input type="text" id="guessInput" maxlength="4" placeholder="4자리 숫자 입력" />
+    <br>
+    <button onclick="checkGuess()">확인</button>
+    <button onclick="resetGame()">게임 초기화</button>
+
+    <div id="utils">
+      <button class="util-button" onclick="copyAnswer()">(디버그) 정답 복사</button>
+      <button class="util-button" onclick="toggleBGM()">🎵 BGM ON/OFF</button>
+      <button class="util-button" onclick="clearLog()">🧹 로그 지우기</button>
+    </div>
+
+    <div id="log"></div>
+  </div>
+
+  <script>
+    let answer = generateAnswer();
+    let bgm = document.getElementById("bgm");
+
+    function generateAnswer() {
+      let digits = [];
+      while (digits.length < 4) {
+        let rand = Math.floor(Math.random() * 10);
+        if (!digits.includes(rand)) {
+          digits.push(rand);
+        }
+      }
+      return digits;
+    }
+
+    function checkGuess() {
+      const input = document.getElementById("guessInput").value;
+      if (!/^[0-9]{4}$/.test(input)) {
+        log("⚠️ 4자리 숫자를 정확히 입력해주세요.");
+        return;
+      }
+
+      const guess = input.split('').map(Number);
+      let strike = 0;
+      let ball = 0;
+
+      for (let i = 0; i < 4; i++) {
+        if (guess[i] === answer[i]) {
+          strike++;
+        } else if (answer.includes(guess[i])) {
+          ball++;
+        }
+      }
+
+      log(`${input} ▶️ ${strike} 스트라이크, ${ball} 볼`);
+
+      if (strike === 4) {
+        log("🎉 홈런! 정답입니다!");
+      }
+    }
+
+    function resetGame() {
+      answer = generateAnswer();
+      document.getElementById("log").innerHTML = "<strong>게임이 초기화되었습니다.</strong><br>";
+      document.getElementById("guessInput").value = "";
+    }
+
+    function log(message) {
+      const time = new Date().toLocaleTimeString();
+      document.getElementById("log").innerHTML += `[${time}] ${message}<br>`;
+      const logDiv = document.getElementById("log");
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function toggleBGM() {
+      if (bgm.paused) {
+        bgm.play();
+        log("🎵 BGM 재생됨");
+      } else {
+        bgm.pause();
+        log("🔇 BGM 정지됨");
+      }
+    }
+
+    function clearLog() {
+      document.getElementById("log").innerHTML = "";
+      showPopup("로그가 지워졌습니다.");
+    }
+
+    function copyAnswer() {
+      navigator.clipboard.writeText(answer.join('')).then(() => {
+        log("📋 정답이 클립보드에 복사되었습니다 (디버그용)");
+      });
+    }
+
+    function showPopup(message) {
+      const popup = document.getElementById("popup");
+      popup.textContent = message;
+      popup.style.opacity = 1;
+      setTimeout(() => {
+        popup.style.opacity = 0;
+      }, 2000);
+    }
+  </script>
+</body>
+</html>
